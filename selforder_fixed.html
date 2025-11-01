@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>粉もん屋八 注文システム</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    const { useState, useEffect } = React;
+    const { ShoppingCart, Plus, Minus, Trash2, Send, Settings, List, Printer, X } = lucide;
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>粉もん屋八 注文システム</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    const { useState, useEffect } = React;
+    const { ShoppingCart, Plus, Minus, Trash2, Send, Settings, List, Printer, X } = lucide;
+
+// 完全なメニューデータ（CSVから全項目を反映）
+const MENU_DATA = {
+  'たこ焼き': {
+    items: [
+      {
+        id: 'takoyaki',
+        name: 'たこ焼き',
+        basePrice: 480,
+        hasOptions: true,
+        options: {
+          size: [
+            { value: '5個', priceModifier: 0, basePrice: 480 },
+            { value: '7個', priceModifier: 0, basePrice: 620 }
+          ],
+          flavor: [
+            { value: 'しょうゆ', priceModifier: 0 },
+            { value: 'ソース', priceModifier: 0 },
+            { value: '塩', priceModifier: 0 },
+            { value: 'ぽん酢', priceModifier: 30 },
+            { value: 'みそ', priceModifier: 30 },
+            { value: '何も無', priceModifier: 0 }
+          ]
+        }
+      },
+      {
+        id: 'mentai_tako',
+        name: '明太マヨたこ焼き',
+        basePrice: 530,
+        hasOptions: true,
+        options: {
+          size: [
+            { value: '5個', priceModifier: 0, basePrice: 530 },
+            { value: '7個', priceModifier: 0, basePrice: 670 }
+          ]
+        }
+      }
+    ]
+  },
+  'お好み焼き': {
+    items: [
+      {
+        id: 'okonomiyaki',
+        name: 'お好み焼き',
+        basePrice: 880,
+        hasOptions: true,
+        options: {
+          type: [
+            { value: 'たこ玉', priceModifier: 0 },
+            { value: '豚玉', priceModifier: 0 }
+          ]
+        }
+      }
+    ]
+  },
+  '焼きそば': {
+    items: [
+      { id: 'yakisoba_sauce', name: 'ソース焼きそば', basePrice: 730 },
+      { id: 'yakisoba_salt', name: '塩焼きそば', basePrice: 730 },
+      { id: 'yakisoba_mentai', name: '明太マヨ焼きそば', basePrice: 780 },
+      { id: 'yakisoba_bokkake', name: 'ぼっかけ焼きそば', basePrice: 1300 }
+    ]
+  },
+  '鉄板': {
+    items: [
+      { id: 'tonpeiyaki', name: 'とん平焼き', basePrice: 620 },
+      { id: 'butakimchi', name: '豚キムチ', basePrice: 620 },
+      { id: 'suji_omelette', name: 'スジオムレツ', basePrice: 770 },
+      { id: 'abrakasu', name: '油かすもやし炒め', basePrice: 620 }
+    ]
+  },
+  '一品': {
+    items: [
+      { id: 'edamame', name: '枝豆', basePrice: 310 },
+      { id: 'hiyayakko', name: '店内　冷奴', basePrice: 340 },
+      { id: 'kimchi_yakko', name: '店内　キムチ冷奴', basePrice: 410 },
+      { id: 'kimchi', name: 'ごま油キムチ', basePrice: 310 },
+      { id: 'cucumber', name: '店内　丸ごときゅうり', basePrice: 330 },
+      { id: 'miso_cabbage', name: '店内　味噌だれキャベツ', basePrice: 320 },
+      { id: 'doteyaki', name: 'どて焼き', basePrice: 600 }
+    ]
+  },
+  '店内のみ': {
+    items: [
+      {
+        id: 'dashi_tako',
+        name: 'だしたこ焼き',
+        basePrice: 510,
+        hasOptions: true,
+        options: {
+          size: [
+            { value: '5個', priceModifier: 0, basePrice: 510 },
+            { value: '7個', priceModifier: 0, basePrice: 650 }
+          ]
+        }
+      },
+      {
+        id: 'shoyu_tako',
+        name: 'しょうゆごま油たこ焼き',
+        basePrice: 510,
+        hasOptions: true,
+        options: {
+          size: [
+            { value: '5個', priceModifier: 0, basePrice: 510 },
+            { value: '7個', priceModifier: 0, basePrice: 650 }
+          ]
+        }
+      }
+    ]
+  },
+  '揚げ物': {
+    items: [
+      { id: 'geso', name: 'ゲソの唐揚げ', basePrice: 650 },
+      { id: 'ninniku', name: '揚げにんにく', basePrice: 280 },
+      { id: 'nankotsu', name: '軟骨唐揚げ', basePrice: 430 },
+      {
+        id: 'karaage',
+        name: '唐揚げ',
+        basePrice: 420,
+        hasOptions: true,
+        options: {
+          quantity: [
+            { value: '3個', priceModifier: 0, basePrice: 420 },
+            { value: '5個', priceModifier: 0, basePrice: 650 }
+          ]
+        }
+      },
+      {
+        id: 'potato',
+        name: 'ポテトフライ',
+        basePrice: 330,
+        hasOptions: true,
+        options: {
+          type: [
+            { value: 'ポテトフライ', priceModifier: 0, basePrice: 330 },
+            { value: 'チーズポテト', priceModifier: 0, basePrice: 430 },
+            { value: '明太マヨポテト', priceModifier: 0, basePrice: 380 }
+          ]
+        }
+      }
+    ]
+  },
+  'ソフトドリンク': {
+    items: [
+      { id: 'oolong', name: 'ウーロン茶', basePrice: 230 },
+      { id: 'orange', name: 'オレンジジュース', basePrice: 230 },
+      { id: 'calpis', name: 'カルピス', basePrice: 230 },
+      { id: 'cola', name: 'コーラ', basePrice: 230 },
+      { id: 'ginger', name: 'ジンジャエール', basePrice: 230 }
+    ]
+  },
+  '生ビール': {
+    items: [
+      { id: 'beer_chu', name: '生ビール中ジョッキ', basePrice: 605 },
+      { id: 'beer_tokudai', name: '生ビールお得ジョッキ', basePrice: 748 },
+      { id: 'hoppy_set', name: 'ホッピーセット', basePrice: 500 },
+      { id: 'hoppy_naka', name: 'ホッピー中おかわり', basePrice: 250 },
+      { id: 'all_free', name: 'オールフリー(ノンアルコール)', basePrice: 506 }
+    ]
+  },
+  'サワー・ハイボール': {
+    items: [
+      {
+        id: 'lemon_sour',
+        name: 'レモンサワー',
+        basePrice: 451,
+        hasOptions: true,
+        options: {
+          size: [
+            { value: '標準', priceModifier: 0, basePrice: 451 },
+            { value: 'メガ', priceModifier: 0, basePrice: 759 }
+          ]
+        }
+      },
+      {
+        id: 'highball',
+        name: 'ハイボール',
+        basePrice: 451,
+        hasOptions: true,
+        options: {
+          type: [
+            { value: '角ハイ', priceModifier: 0, basePrice: 484 },
+            { value: 'タコハイ', priceModifier: 0, basePrice: 484 },
+            { value: 'ウーロンハイ', priceModifier: 0, basePrice: 451 },
+            { value: 'こうばし茶ハイ', priceModifier: 0, basePrice: 451 },
+            { value: 'メーカーズハイボール', priceModifier: 0, basePrice: 649 }
+          ]
+        }
+      },
+      {
+        id: 'jim_beam',
+        name: 'ジムビーム',
+        basePrice: 451,
+        hasOptions: true,
+        options: {
+          size: [
+            { value: '標準', priceModifier: 0, basePrice: 451 },
+            { value: 'メガ', priceModifier: 0, basePrice: 759 }
+          ]
+        }
+      },
+      {
+        id: 'chuhai',
+        name: 'チューハイ',
+        basePrice: 451,
+        hasOptions: true,
+        options: {
+          flavor: [
+            { value: 'プレーン', priceModifier: 0 },
+            { value: 'レモン', priceModifier: 0 },
+            { value: 'ライム', priceModifier: 0 },
+            { value: 'ゆず', priceModifier: 0 },
+            { value: 'グレープフルーツ', priceModifier: 0 },
+            { value: '梅', priceModifier: 0 },
+            { value: '青りんご', priceModifier: 0 },
+            { value: 'カルピス', priceModifier: 0 }
+          ]
+        }
+      }
+    ]
+  },
+  '梅酒・焼酎': {
+    items: [
+      {
+        id: 'umeshu',
+        name: '梅酒',
+        basePrice: 451,
+        hasOptions: true,
+        options: {
+          style: [
+            { value: 'ソーダ割り', priceModifier: 0, basePrice: 451 },
+            { value: '水割り', priceModifier: 0, basePrice: 451 },
+            { value: 'ロック', priceModifier: 0, basePrice: 451 },
+            { value: 'ロックダブル', priceModifier: 0, basePrice: 902 }
+          ]
+        }
+      },
+      {
+        id: 'shochu',
+        name: '焼酎',
+        basePrice: 451,
+        hasOptions: true,
+        options: {
+          type: [
+            { value: '二階堂', priceModifier: 0 },
+            { value: '黒霧島', priceModifier: 0 }
+          ],
+          style: [
+            { value: 'お湯割り', priceModifier: 0, basePrice: 451 },
+            { value: 'ソーダ割り', priceModifier: 0, basePrice: 451 },
+            { value: '水割り', priceModifier: 0, basePrice: 451 },
+            { value: 'ロック', priceModifier: 0, basePrice: 451 },
+            { value: 'ロックダブル', priceModifier: 0, basePrice: 902 }
+          ]
+        }
+      }
+    ]
+  },
+  'セットメニュー': {
+    items: [
+      {
+        id: 'set_a',
+        name: '店内のみ　Aセット',
+        description: '生ビールとたこ焼き5個のセット',
+        basePrice: 1000,
+        hasOptions: true,
+        options: {
+          flavor: [
+            { value: 'たこ焼き　しょうゆ', priceModifier: 0 },
+            { value: 'たこ焼き　ソース', priceModifier: 0 },
+            { value: 'たこ焼き　塩', priceModifier: 0 }
+          ]
+        }
+      },
+      {
+        id: 'set_b',
+        name: '店内のみ　Bセット',
+        description: '生ビールお得ジョッキとたこ焼き7個のセット',
+        basePrice: 1250,
+        hasOptions: true,
+        options: {
+          flavor: [
+            { value: 'たこ焼き　しょうゆ', priceModifier: 0 },
+            { value: 'たこ焼き　ソース', priceModifier: 0 },
+            { value: 'たこ焼き　塩', priceModifier: 0 }
+          ]
+        }
+      }
+    ]
+  }
+};
+
+const App = () => {
+  const [view, setView] = useState('customer');
+  const [cart, setCart] = useState([]);
+  const [tableNumber, setTableNumber] = useState('');
+  const [orders, setOrders] = useState([]);
+  const [printerIP, setPrinterIP] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState({});
+
+  useEffect(() => {
+    loadOrders();
+    loadPrinterIP();
+  }, []);
+
+  const loadPrinterIP = async () => {
+    try {
+      const result = await window.storage.get('printer_ip');
+      if (result) {
+        setPrinterIP(result.value);
+      }
+    } catch (error) {
+      console.log('プリンターIP未設定');
+    }
+  };
+
+  const savePrinterIP = async (ip) => {
+    try {
+      await window.storage.set('printer_ip', ip);
+      setPrinterIP(ip);
+      alert('プリンターIPを保存しました');
+    } catch (error) {
+      console.error('保存エラー:', error);
+    }
+  };
+
+  const loadOrders = async () => {
+    try {
+      const result = await window.storage.list('order:');
+      if (result && result.keys) {
+        const orderPromises = result.keys.map(key => 
+          window.storage.get(key).then(res => res ? JSON.parse(res.value) : null)
+        );
+        const loadedOrders = await Promise.all(orderPromises);
+        setOrders(loadedOrders.filter(o => o !== null));
+      }
+    } catch (error) {
+      console.log('注文データ読み込みエラー');
+    }
+  };
+
+  const openItemModal = (item) => {
+    setSelectedItem(item);
+    setSelectedOptions({});
+    setShowModal(true);
+  };
+
+  const calculatePrice = (item, options) => {
+    let price = item.basePrice;
+    
+    if (item.hasOptions && options) {
+      Object.entries(options).forEach(([key, value]) => {
+        const optionGroup = item.options[key];
+        if (optionGroup) {
+          const selectedOption = optionGroup.find(opt => opt.value === value);
+          if (selectedOption) {
+            if (selectedOption.basePrice !== undefined) {
+              price = selectedOption.basePrice;
+            } else if (selectedOption.priceModifier) {
+              price += selectedOption.priceModifier;
+            }
+          }
+        }
+      });
+    }
+    
+    return price;
+  };
+
+  const addToCart = (item, options = {}) => {
+    const price = calculatePrice(item, options);
+    const cartItem = {
+      id: `${item.id}_${Date.now()}`,
+      name: item.name,
+      baseId: item.id,
+      price: price,
+      quantity: 1,
+      options: options
+    };
+
+    setCart([...cart, cartItem]);
+    setShowModal(false);
+    setSelectedItem(null);
+    setSelectedOptions({});
+  };
+
+  const addItemToCart = (item) => {
+    if (item.hasOptions) {
+      openItemModal(item);
+    } else {
+      addToCart(item);
+    }
+  };
+
+  const updateQuantity = (itemId, delta) => {
+    const newCart = cart.map(item => {
+      if (item.id === itemId) {
+        const newQty = item.quantity + delta;
+        return { ...item, quantity: Math.max(0, newQty) };
+      }
+      return item;
+    }).filter(item => item.quantity > 0);
+    setCart(newCart);
+  };
+
+  const removeFromCart = (itemId) => {
+    setCart(cart.filter(item => item.id !== itemId));
+  };
+
+  const getTotalPrice = () => {
+    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
+
+  const submitOrder = async () => {
+    if (!tableNumber.trim()) {
+      alert('テーブル番号を入力してください');
+      return;
+    }
+    if (cart.length === 0) {
+      alert('商品を選択してください');
+      return;
+    }
+
+    const order = {
+      id: Date.now(),
+      tableNumber: tableNumber,
+      items: cart,
+      total: getTotalPrice(),
+      timestamp: new Date().toLocaleString('ja-JP'),
+      status: 'pending'
+    };
+
+    try {
+      await window.storage.set(`order:${order.id}`, JSON.stringify(order));
+      
+      if (printerIP) {
+        printOrder(order);
+      }
+
+      alert('ご注文ありがとうございます！\n伝票を印刷しています。');
+      setCart([]);
+      setTableNumber('');
+      await loadOrders();
+    } catch (error) {
+      console.error('注文保存エラー:', error);
+      alert('注文の保存に失敗しました');
+    }
+  };
+
+  const printOrder = (order) => {
+    const printData = `
+=============================
+  粉もん屋八 下赤塚店
+=============================
+
+テーブル: ${order.tableNumber}
+注文番号: ${order.id}
+時刻: ${order.timestamp}
+-----------------------------
+${order.items.map(item => {
+  let optionsText = '';
+  if (item.options && Object.keys(item.options).length > 0) {
+    optionsText = '\n  ' + Object.values(item.options).join(', ');
+  }
+  return `${item.name}${optionsText} x${item.quantity}\n  ¥${item.price * item.quantity}`;
+}).join('\n')}
+-----------------------------
+合計: ¥${order.total}
+=============================
+`;
+
+    console.log('印刷データ:', printData);
+    alert(`注文を受け付けました！\n\n${printData}`);
+  };
+
+  const OptionModal = () => {
+    if (!selectedItem || !showModal) return null;
+
+    const allOptionsSelected = selectedItem.options ? 
+      Object.keys(selectedItem.options).every(key => selectedOptions[key]) : true;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+            <h3 className="text-xl font-bold">{selectedItem.name}</h3>
+            <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {selectedItem.description && (
+              <p className="text-sm text-gray-600">{selectedItem.description}</p>
+            )}
+
+            {selectedItem.options && Object.entries(selectedItem.options).map(([key, options]) => (
+              <div key={key}>
+                <label className="block font-bold text-gray-700 mb-2 capitalize">
+                  {key === 'size' ? 'サイズ' :
+                   key === 'flavor' ? '味' :
+                   key === 'type' ? '種類' :
+                   key === 'quantity' ? '個数' :
+                   key === 'style' ? 'スタイル' : key}
+                  <span className="text-red-500 ml-1">*</span>
+                </label>
+                <div className="space-y-2">
+                  {options.map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => setSelectedOptions({...selectedOptions, [key]: option.value})}
+                      className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                        selectedOptions[key] === option.value
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-200 hover:border-orange-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span>{option.value}</span>
+                        {option.basePrice !== undefined && (
+                          <span className="font-bold">¥{option.basePrice}</span>
+                        )}
+                        {option.priceModifier > 0 && (
+                          <span className="text-orange-600">+¥{option.priceModifier}</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <div className="pt-4 border-t">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-lg font-bold">価格</span>
+                <span className="text-2xl font-bold text-orange-600">
+                  ¥{calculatePrice(selectedItem, selectedOptions)}
+                </span>
+              </div>
+              <button
+                onClick={() => allOptionsSelected && addToCart(selectedItem, selectedOptions)}
+                disabled={!allOptionsSelected}
+                className={`w-full py-3 rounded-lg font-bold text-white transition-all ${
+                  allOptionsSelected
+                    ? 'bg-orange-500 hover:bg-orange-600'
+                    : 'bg-gray-300 cursor-not-allowed'
+                }`}
+              >
+                {allOptionsSelected ? 'カートに追加' : 'すべてのオプションを選択してください'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const CustomerView = () => (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 pb-32">
+      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-6 shadow-lg">
+        <h1 className="text-3xl font-bold text-center">粉もん屋八 下赤塚店</h1>
+        <p className="text-center mt-2 text-orange-100">メニューから商品をお選びください</p>
+      </div>
+
+      <div className="max-w-4xl mx-auto p-4">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+          <label className="block text-gray-700 font-bold mb-2">テーブル番号</label>
+          <input
+            type="text"
+            value={tableNumber}
+            onChange={(e) => setTableNumber(e.target.value)}
+            placeholder="例: 1, 2, 3..."
+            className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:border-orange-500 focus:outline-none text-lg"
+          />
+        </div>
+
+        {Object.entries(MENU_DATA).map(([category, data]) => (
+          <div key={category} className="mb-6">
+            <h2 className="text-2xl font-bold text-orange-700 mb-3 border-b-2 border-orange-300 pb-2">
+              {category}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {data.items.map(item => (
+                <div key={item.id} className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-bold text-gray-800">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                      )}
+                    </div>
+                    <span className="text-orange-600 font-bold text-lg">¥{item.basePrice}〜</span>
+                  </div>
+                  {item.hasOptions && (
+                    <div className="text-xs text-gray-500 mb-2">
+                      オプション選択が必要です
+                    </div>
+                  )}
+                  <button
+                    onClick={() => addItemToCart(item)}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Plus size={20} /> カートに追加
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {cart.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-2xl border-t-4 border-orange-500">
+          <div className="max-w-4xl mx-auto p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <ShoppingCart size={24} className="text-orange-600" />
+                <span className="font-bold text-lg">カート ({cart.length}品)</span>
+              </div>
+              <button
+                onClick={() => setCart([])}
+                className="text-red-600 hover:text-red-700 flex items-center gap-1"
+              >
+                <Trash2 size={20} /> クリア
+              </button>
+            </div>
+
+            <div className="max-h-40 overflow-y-auto mb-3">
+              {cart.map(item => (
+                <div key={item.id} className="flex justify-between items-center py-2 border-b">
+                  <div className="flex-1">
+                    <span className="text-sm font-bold">{item.name}</span>
+                    {item.options && Object.keys(item.options).length > 0 && (
+                      <div className="text-xs text-gray-500">
+                        {Object.values(item.options).join(', ')}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => updateQuantity(item.id, -1)}
+                      className="bg-gray-200 hover:bg-gray-300 rounded p-1"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="font-bold w-8 text-center">{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item.id, 1)}
+                      className="bg-gray-200 hover:bg-gray-300 rounded p-1"
+                    >
+                      <Plus size={16} />
+                    </button>
+                    <span className="ml-2 font-bold">¥{item.price * item.quantity}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-xl font-bold">合計</span>
+              <span className="text-2xl font-bold text-orange-600">¥{getTotalPrice()}</span>
+            </div>
+
+            <button
+              onClick={submitOrder}
+              className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-4 rounded-lg flex items-center justify-center gap-2 text-lg transition-all"
+            >
+              <Send size={24} /> 注文を確定する
+            </button>
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={() => setView('admin')}
+        className="fixed bottom-24 right-4 bg-gray-700 hover:bg-gray-800 text-white p-3 rounded-full shadow-lg"
+      >
+        <Settings size={24} />
+      </button>
+
+      <OptionModal />
+    </div>
+  );
+
+  const AdminView = () => (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-800">管理画面</h1>
+            <button
+              onClick={() => setView('customer')}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg"
+            >
+              注文画面に戻る
+            </button>
+          </div>
+
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
+              <Printer size={24} /> プリンター設定
+            </h2>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-gray-700 font-bold mb-2">
+                mC-Print3 IPアドレス
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={printerIP}
+                  onChange={(e) => setPrinterIP(e.target.value)}
+                  placeholder="例: 192.168.1.100"
+                  className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:border-orange-500"
+                />
+                <button
+                  onClick={() => savePrinterIP(printerIP)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+                >
+                  保存
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                ※ mC-Print3のIPアドレスを入力してください。設定後、注文が自動印刷されます。
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <List size={24} /> 注文履歴
+              </h2>
+              <button
+                onClick={loadOrders}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+              >
+                更新
+              </button>
+            </div>
+
+            {orders.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                注文はまだありません
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders.sort((a, b) => b.id - a.id).map(order => (
+                  <div key={order.id} className="bg-gray-50 p-4 rounded-lg border-l-4 border-orange-500">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <span className="font-bold text-lg">テーブル {order.tableNumber}</span>
+                        <span className="text-gray-600 ml-4 text-sm">{order.timestamp}</span>
+                      </div>
+                      <span className="text-xl font-bold text-orange-600">¥{order.total}</span>
+                    </div>
+                    <div className="space-y-1">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="text-sm text-gray-700">
+                          {item.name} 
+                          {item.options && Object.keys(item.options).length > 0 && (
+                            <span className="text-gray-500"> ({Object.values(item.options).join(', ')})</span>
+                          )}
+                          {' '}× {item.quantity}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return view === 'customer' ? <CustomerView /> : <AdminView />;
+};
+
+export default App;
+  </script>
+</body>
+</html>
+
+    // localStorage対応に修正
+    const oldSet = window.storage?.set;
+    const oldGet = window.storage?.get;
+    const oldList = window.storage?.list;
+
+    window.storage = {
+      set: async (key, value) => localStorage.setItem(key, value),
+      get: async (key) => {
+        const val = localStorage.getItem(key);
+        return val ? { value: val } : null;
+      },
+      list: async (prefix) => {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
+        return { keys };
+      }
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>
